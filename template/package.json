@@ -1,0 +1,43 @@
+{
+  "name": "video-template-1",
+  "version": "1.0.0",
+  "description": "My Remotion video",
+  "repository": {},
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@remotion/cli": "4.0.486",
+    "@remotion/media": "^4.0.486",
+    "@remotion/tailwind-v4": "4.0.486",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.486",
+    "tailwindcss": "4.0.0"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "4.0.486",
+    "@types/react": "19.2.7",
+    "@types/web": "0.0.166",
+    "eslint": "9.19.0",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "dev": "remotion studio",
+    "make": "python3 scripts/build_video.py",
+    "make:render": "python3 scripts/build_video.py --render",
+    "plan:layouts": "python3 scripts/plan_layouts.py",
+    "apply:layouts": "python3 scripts/apply_layouts.py",
+    "test:layouts": "python3 scripts/test_layout_planner.py",
+    "check:layout-sheet": "python3 scripts/render_layout_contact_sheet.py",
+    "check:script": "python3 scripts/validate_viral_script.py script.md",
+    "check:voice": "python3 scripts/check_voice_policy.py --live",
+    "check:sync": "python3 scripts/verify_sync.py",
+    "build": "remotion bundle",
+    "upgrade": "remotion upgrade",
+    "lint": "eslint src && tsc"
+  },
+  "sideEffects": [
+    "*.css"
+  ]
+}

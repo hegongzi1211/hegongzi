@@ -1,0 +1,154 @@
+# -*- coding: utf-8 -*-
+"""从 ocr_raw 原始 12 张图重建干净内容：生成 narration.txt + skill_content.json。
+修正明显 OCR 噪声（帮有我->帮我，别赁感觉->别凭感觉，HIML->HTML 等），
+保留全部 6 大块，不删减。"""
+import json
+
+SKILLS = [
+    {
+        "num": "01", "name": "Agent-Reach",
+        "oneLine": "搜国内外多平台热点，收集素材",
+        "useful": "帮我把分散的信息源先扫一遍，找出值得继续看的话题。",
+        "like": "全天候素材侦察员。",
+        "usage": "找热点、查资料、补案例、验证选题方向",
+        "pairing": "搭配 Horizon 看趋势；搭配 MediaCrawler 看真实讨论。",
+        "caution": "热点只负责提供线索，发之前还要换成你的账号视角。",
+        "conclusion": "先看到机会，再决定写什么。",
+    },
+    {
+        "num": "02", "name": "Horizon",
+        "oneLine": "每天热点和趋势简报，资讯雷达",
+        "useful": "把一天的信息噪音压缩成可读简报，开工前看一眼就知道往哪找。",
+        "like": "每天准时发来的趋势早报。",
+        "usage": "做日更选题、追踪行业新闻、整理热点脉络",
+        "pairing": "搭配 Agent-Reach 深挖素材；搭配 nuwa-skill 补创作",
+        "caution": "简报是起点，不能代替你的判断和切入角度。",
+        "conclusion": "让选题少靠临时灵感。",
+    },
+    {
+        "num": "03", "name": "MediaCrawler",
+        "oneLine": "采集公开内容与评论反馈",
+        "useful": "用公开内容和评论，帮你找到用户说过的原话和反复出现的问题。",
+        "like": "评论区里的用户研究助手。",
+        "usage": "采集公开内容、收集评论、提炼高频问题",
+        "pairing": "搭配 Agent-Reach 定位话题；搭配内容工具写成初稿。",
+        "caution": "只采集公开信息；不要把数据当成结论，要看语境。",
+        "conclusion": "别凭感觉猜用户，先去看他们怎么说。",
+    },
+    {
+        "num": "04", "name": "huashu-design",
+        "oneLine": "生成 HTML、原型、可编辑 PPT、动画",
+        "useful": "当你脑子里已经有结构，接下来需要的是一张能看、能改、能展示的视觉稿。",
+        "like": "把草图做成成品的设计搭档。",
+        "usage": "做 HTML、原型、PPT、有动画和视觉稿",
+        "pairing": "搭配本篇的图文卡片流程，把内容变成发布素材。",
+        "caution": "先写清内容层级，再开始做视觉；别让装饰盖过重点。",
+        "conclusion": "内容讲清楚后，设计才有地方发力。",
+    },
+    {
+        "num": "05", "name": "Auto-Redbook-Skills",
+        "oneLine": "自动写文案、长文章、生成配图",
+        "useful": "把从标题、正文到配图的第一版先跑出来，省下重复起稿的时间。",
+        "like": "坐在旁边帮你起草的内容助手。",
+        "usage": "写文案、写长文章、生成配图、整理初稿",
+        "pairing": "搭配 nuwa-skill 固定表达；搭配卡片工具做成图文。",
+        "caution": "初稿可以快，账号观点和案例要由你补进去。",
+        "conclusion": "先有可修改的第一版，再慢慢打磨。",
+    },
+    {
+        "num": "06", "name": "Generative-Media-Skills",
+        "oneLine": "图片、视频、音频生成工作流",
+        "useful": "同一个选题不只是一段文字，还可以延展成图、视频、音频等不同发布资产。",
+        "like": "多媒体内容工作台。",
+        "usage": "处理图片、视频、音频等生成和加工流程",
+        "pairing": "搭配文案 Skill 产出脚本；搭配发布工具分发。",
+        "caution": "先定内容用途再选形式，别为了生成而生成。",
+        "conclusion": "一个好选题，能被做成很多种内容。",
+    },
+    {
+        "num": "07", "name": "nuwa-skill",
+        "oneLine": "固定文风，统一账号表达风格",
+        "useful": "每次内容都换一个口吻，很难让人记住你，这个环节负责把表达拉回同一条线。",
+        "like": "账号的语言风格手册。",
+        "usage": "固定语气、常用句式、表达边界和人物感",
+        "pairing": "搭配任何写作 Skill，让初稿更接近你的账号。",
+        "caution": "风格不是套模板，要持续补进你自己的真实表达。",
+        "conclusion": "让读者多看几篇，就能认出是你。",
+    },
+    {
+        "num": "08", "name": "guizang-social-card-skill",
+        "oneLine": "生成图文卡片和封面图",
+        "useful": "文字写完以后，用更清楚的层级和封面结构，给读者一个点开的理由。",
+        "like": "内容的视觉编辑。",
+        "usage": "生成图文卡片、封面图和信息可视化素材",
+        "pairing": "搭配 huashu-design 做可编辑视觉稿；搭配发布工具分发。",
+        "caution": "封面只讲一个最强理由，正文信息才放到轮播里。",
+        "conclusion": "先让人停住，再让人看懂。",
+    },
+    {
+        "num": "09", "name": "social-auto-upload",
+        "oneLine": "多平台内容自动上传",
+        "useful": "同一份内容要发多个平台时，把重复的上传、填字段和切账号交给自动化。",
+        "like": "发布前最后一公里的执行助手。",
+        "usage": "多平台自动上传、减少重复发布操作",
+        "pairing": "搭配内容和卡片工具，完成后直接进入发布环节。",
+        "caution": "自动上传前仍要检查标题、封面、链接和平台规则。",
+        "conclusion": "把时间留给创作，重复动作交给工具。",
+    },
+    {
+        "num": "10", "name": "MediaCrawler",
+        "oneLine": "发布后继续采集评论反馈",
+        "useful": "内容发出去不等于结束。继续看评论和讨论，下一轮选题才有东西可接。",
+        "like": "发布后的反馈收集器。",
+        "usage": "采集评论反馈、整理问题、为下一轮复盘提供线索",
+        "pairing": "和前期的 Agent-Reach、Horizon 串成选题到复盘的闭环。",
+        "caution": "不要只挑夸你的评论；反复出现的疑问更有价值。",
+        "conclusion": "复盘不是最后一步，它会变成下一篇的开头。",
+    },
+]
+
+INTRO = "Codex 做自媒体，必装十大 Skill。TOP 10，从选题到发布，再到反馈回收。"
+HOOK = ("这 10 个 Skill，刚好串成一条内容生产线。选题、创作、视觉、发布、复盘分别有人处理。"
+        "你把精力留给真正要你判断的地方：做什么、怎么讲、值不值得持续做。")
+WORKFLOW = ("先看完整流程。01 找选题：Agent-Reach 加 Horizon，前期洞察。"
+            "02 听用户怎么说：MediaCrawler，用户反馈。"
+            "03 写出第一版：Auto-Redbook-Skills 加 nuwa-skill，内容创作。"
+            "04 做成可发布素材：huashu-design 加图文卡片，视觉表达。"
+            "05 做多媒体延展：Generative-Media-Skills，多模态。"
+            "06 发出去再收反馈：social-auto-upload 加 MediaCrawler，发布复盘。")
+OUTRO = "工具负责把重复环节跑顺；选题判断和账号视角，还是你自己做主。"
+
+
+def skill_narration(s):
+    return (f"第 {s['num']} 个必装 Skill，{s['name']}。{s['oneLine']}。"
+            f"我觉得最有用的点：{s['useful']}"
+            f"它像什么？{s['like']}"
+            f"主要用途：{s['usage']}。"
+            f"推荐搭配：{s['pairing']}"
+            f"注意事项：{s['caution']}"
+            f"我的结论：{s['conclusion']}")
+
+
+def main():
+    # 完整旁白文本（顺序：intro + hook + workflow + 10 skill + outro）
+    parts = [INTRO, HOOK, WORKFLOW] + [skill_narration(s) for s in SKILLS] + [OUTRO]
+    narration = "\n".join(parts)
+    with open("generated/narration.txt", "w", encoding="utf-8") as f:
+        f.write(narration)
+    print("narration.txt 字数:", len(narration))
+
+    # 结构化内容（给 video-data 用）
+    content = {
+        "intro": INTRO,
+        "hook": HOOK,
+        "workflow": WORKFLOW,
+        "outro": OUTRO,
+        "skills": SKILLS,
+    }
+    with open("skill_content.json", "w", encoding="utf-8") as f:
+        json.dump(content, f, ensure_ascii=False, indent=1)
+    print("skill_content.json 已写，skills:", len(SKILLS))
+
+
+if __name__ == "__main__":
+    main()

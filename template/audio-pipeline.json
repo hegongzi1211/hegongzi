@@ -1,0 +1,23 @@
+{
+  "scope": "remotion_video_template_1_only",
+  "provider": "voicebox_local",
+  "service_url": "http://127.0.0.1:17493",
+  "profile_id": "替换为你的Voicebox档案ID",
+  "profile_name": "替换为你的档案名",
+  "engine": "qwen",
+  "model_name": "qwen3-tts",
+  "model_size": "1.7B",
+  "seed": 2026071201,
+  "language": "zh",
+  "generation_mode": "one_continuous_take",
+  "max_chunk_chars": 300,
+  "crossfade_ms": 40,
+  "normalize": true,
+  "locked": true,
+  "postprocess_filter": "highpass=f=80,lowpass=f=8000,speechnorm=e=6.5:r=0.0001:l=1",
+  "outro_voice": {
+    "profile_id": "替换为你的Voicebox档案ID",
+    "text": "我是【你的名字】，关注我，学习更多 AI 知识。",
+    "asset": "public/generated/outro-voice.wav"
+  }
+}
