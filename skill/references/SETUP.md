@@ -55,7 +55,7 @@ export WHISPER_MODEL_PATH="$HOME/models/ggml-small.bin"   # 打轴必填，没�
 
 ## 第四步：装技能 + 跑通示例
 
-1. 在 WorkBuddy 装入 `hegongzi` 技能。
+1. 在 WorkBuddy 装入 `hegongzi-video-student` 技能。
 2. 对话里说：
 
    > 用视频模板做个关于「用 AI 写周报」的竖屏短视频。
