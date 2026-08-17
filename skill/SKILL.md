@@ -1,5 +1,5 @@
 ---
-name: hegongzi-video-student
+name: hegongzi
 description: 学员版 / 可分发版。基于何公子 Remotion 视频模板1（1080×1440 / 30fps / 数据驱动 + 多版式自适应）的**已解耦**版本，让学员在自己的 WorkBuddy + 自己机器上复现"脚本→数据→配音→字幕→渲染"全流程。模板路径、Whisper 模型、配音音色、片尾人名/头像全部解耦为环境变量或可替换配置，**不绑定何公子任何本机资源**。当用户说"用视频模板做个关于 XXX 的片子""复刻何公子的视频流程""把这段内容做成竖屏短视频"且使用者不是何公子本人时使用。
 metadata:
   short-description: 何公子视频模板1·学员可分发版（已解耦）
@@ -8,7 +8,7 @@ metadata:
 agent_created: true
 ---
 
-# hegongzi-video-student（学员可分发版）
+# hegongzi（学员可分发版）
 
 这是何公子 Remotion 视频模板1 的**学员版**。目标：让学员在自己的 WorkBuddy + 自己电脑上，用同一套数据驱动流程跑出竖屏短视频。
 

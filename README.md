@@ -29,24 +29,24 @@ hgz-video-template1-student/
 
 把 `skill/` 文件夹整个复制到 WorkBuddy 的技能目录：
 
-- **用户级（所有项目可用）**：`~/.workbuddy/skills/hegongzi-video-student/`
-- **项目级（仅当前项目）**：`<你的项目>/.workbuddy/skills/hegongzi-video-student/`
+- **用户级（所有项目可用）**：`~/.workbuddy/skills/hegongzi/`
+- **项目级（仅当前项目）**：`<你的项目>/.workbuddy/skills/hegongzi/`
 
 例如（macOS / Linux）：
 
 ```bash
 mkdir -p ~/.workbuddy/skills
-cp -R skill ~/.workbuddy/skills/hegongzi-video-student
+cp -R skill ~/.workbuddy/skills/hegongzi
 ```
 
 Windows（PowerShell）：
 
 ```powershell
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.workbuddy\skills"
-Copy-Item -Recurse skill "$env:USERPROFILE\.workbuddy\skills\hegongzi-video-student"
+Copy-Item -Recurse skill "$env:USERPROFILE\.workbuddy\skills\hegongzi"
 ```
 
-复制后**重启 WorkBuddy**（或刷新技能列表），在技能管理面板里能看到 `hegongzi-video-student`。
+复制后**重启 WorkBuddy**（或刷新技能列表），在技能管理面板里能看到 `hegongzi`。
 
 ## 二、放置模板并配置环境变量
 
@@ -90,7 +90,7 @@ Skill 会自动：写口播脚本 → 生成配音 → Whisper 打轴 → 规划
 
 ```bash
 git pull
-cp -R skill ~/.workbuddy/skills/hegongzi-video-student   # 覆盖更新 Skill
+cp -R skill ~/.workbuddy/skills/hegongzi   # 覆盖更新 Skill
 cp -R template ~/video-template-1-student                       # 覆盖更新模板（注意保留你改过的 audio-pipeline.json / avatar.png / LockedOutro.tsx）
 ```
 
