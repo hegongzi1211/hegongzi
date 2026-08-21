@@ -1,6 +1,6 @@
 # 何公子视频模板1 · 学员版 Skill（开源分发包）
 
-把何公子的竖屏短视频模板（Remotion + 本地 Voicebox 配音 + Whisper 字幕打轴）做成可自己安装的 WorkBuddy Skill，学员在自己的机器上跑通「脚本 → 数据 → 配音 → 字幕 → 渲染」全流程。
+把何公子的竖屏短视频模板（Remotion + 本地 Voicebox / 火山引擎云端配音 + Whisper 字幕打轴）做成可自己安装的 WorkBuddy Skill，学员在自己的机器上跑通「脚本 → 数据 → 配音 → 字幕 → 渲染」全流程。
 
 > 此仓库含两部分：**Skill 本体**（告诉 WorkBuddy 怎么做） + **干净模板目录**（Remotion 工程本体，已剥离原作者音色/头像/成片）。两者都要装。
 
@@ -67,9 +67,10 @@ export WHISPER_MODEL_PATH="/path/to/whisper.cpp/models/ggml-large-v3.bin"
 | **Node.js 22+** | 跑 Remotion 渲染 | 模板 `package.json` 锁定 22.x |
 | **Python 3.13+** | 跑配音/打轴脚本 | 标准库即可，无需额外 pip 包 |
 | **whisper.cpp（`whisper-cli`）** | 字幕时间轴 | 必须编译好，`WHISPER_MODEL_PATH` 指向 large-v3 模型 |
-| **本地 Voicebox TTS 服务** | 配音 | 启动在 `127.0.0.1:17493`，用自己的声音克隆音色 |
+| **本机 Voicebox TTS 服务**（默认） | 配音 | 启动在 `127.0.0.1:17493`，用自己的声音克隆音色；或用火山引擎云端配音替代 |
+| **火山引擎 API Key + 复刻音色**（可选） | 云端配音 | 不想装 Voicebox 时用，详见 `skill/references/火山引擎语音克隆接入.md` |
 
-> ⚠️ Whisper 和 Voicebox 是**硬依赖**，没有它们整条管线跑不通（不是可选项）。具体安装与配置见 `skill/references/SETUP.md`。
+> ⚠️ Whisper 是**硬依赖**（打轴必需）；配音二选一：**本机 Voicebox** 或 **火山引擎云端**，二者均需配置好。安装与配置见 `skill/references/SETUP.md`。
 
 ## 四、怎么用
 
@@ -81,7 +82,7 @@ Skill 会自动：写口播脚本 → 生成配音 → Whisper 打轴 → 规划
 
 首跑前请先按 `skill/references/SETUP.md` 完成：
 1. `cd $REMOTION_TEMPLATE_DIR && npm install`
-2. 在 `audio-pipeline.json` 填入你自己的 Voicebox 档案、`locked: true`、片尾文案
+2. 在 `audio-pipeline.json` 填入你自己的配音配置（本机 Voicebox 档案 + `locked: true` + 片尾文案；或火山引擎 `api_key` / `speaker_id`，见 `skill/references/火山引擎语音克隆接入.md`）
 3. 生成你自己的 `public/generated/outro-voice.wav`、替换 `public/outro/avatar.png`、改 `src/template/scenes/LockedOutro.tsx` 里的名字
 
 ## 五、更新

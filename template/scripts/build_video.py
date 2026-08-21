@@ -635,8 +635,10 @@ def main() -> None:
 
     voice_config = json.loads(VOICE_CONFIG.read_text(encoding="utf-8"))
     provider = voice_config.get("provider")
-    if provider != "voicebox_local":
-        raise SystemExit("当前Remotion模板只允许使用锁定的本机Voicebox声音方案")
+    if provider not in ("voicebox_local", "volcengine"):
+        raise SystemExit("当前Remotion模板只允许 voicebox_local 或 volcengine 配音方案")
+    # 按 provider 选择配音脚本：火山引擎走 ve_generate.py，本机 Voicebox 走 voicebox_generate.py
+    voice_script = ROOT / "scripts" / ("ve_generate.py" if provider == "volcengine" else "voicebox_generate.py")
     script_source = script_path.read_text(encoding="utf-8")
     try:
         narration_text = extract_formal_body(script_source, voice_config["outro_voice"]["text"])
@@ -661,7 +663,7 @@ def main() -> None:
     cache_key = hashlib.sha256(
         narration_text.encode("utf-8")
         + VOICE_CONFIG.read_bytes()
-        + VOICE_SCRIPT.read_bytes()
+        + voice_script.read_bytes()
         + VOICE_FILTER.encode("utf-8")
     ).hexdigest()
     cache_path = generated / "narration-cache.json"
@@ -672,7 +674,7 @@ def main() -> None:
         print("voice_cache=hit")
     else:
         print("voice_cache=miss")
-        run([sys.executable, str(VOICE_SCRIPT), "--text-file", str(text_path), "--output", str(raw_audio)])
+        run([sys.executable, str(voice_script), "--text-file", str(text_path), "--output", str(raw_audio)])
         run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(raw_audio), "-af", VOICE_FILTER, "-c:a", "pcm_s16le", str(final_audio)])
         run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(final_audio), "-ac", "1", "-ar", "16000", str(whisper_input)])
         run(["whisper-cli", "-m", str(WHISPER_MODEL), "-l", "zh", "-f", str(whisper_input), "-ojf", "-ml", "14", "-sow", "-of", str(whisper_base), "--no-prints"])
@@ -716,10 +718,16 @@ def main() -> None:
     scenes_path.write_text(json.dumps(data["scenes"], ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (generated / "captions.json").write_text(json.dumps(data["captions"], ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     shutil.copy2(data_path, generated / "resolved-video-data.json")
-    print(f"voice_source=voicebox:{voice_config['profile_id']}")
-    print(f"voice_model={voice_config['model_name']}:{voice_config['model_size']}")
-    print(f"voice_mode={voice_config['generation_mode']}")
-    print(f"outro_voice_source=voicebox:{voice_config['outro_voice']['profile_id']}")
+    if provider == "volcengine":
+        print(f"voice_source=volcengine:{voice_config.get('speaker_id')}")
+        print(f"voice_model={voice_config.get('resource_id')}")
+        print("voice_mode=volcengine")
+        print(f"outro_voice_source=volcengine:{voice_config.get('outro_voice', {}).get('speaker_id')}")
+    else:
+        print(f"voice_source=voicebox:{voice_config['profile_id']}")
+        print(f"voice_model={voice_config['model_name']}:{voice_config['model_size']}")
+        print(f"voice_mode={voice_config['generation_mode']}")
+        print(f"outro_voice_source=voicebox:{voice_config['outro_voice']['profile_id']}")
     print(f"narration={final_audio}")
     print(f"captions={generated / 'captions.json'}")
 

@@ -1,0 +1,21 @@
+{
+  "_说明": "火山引擎（Volcano Engine）云端配音配置示例。把本文件复制为模板根目录下的 audio-pipeline.json，并填好 api_key 与 speaker_id 即可。与 voicebox_local 二选一，模板靠 provider 字段切换。",
+  "_重要": "1) speaker_id 来自『声音复刻』训练返回（icl_/S_ 开头），不是你随便起的名字；2) 后付费音色首次正式合成即『转正』并收费，务必先用 ve_voice_clone.py query 确认试听满意；3) resource_id 默认 seed-icl-2.0（声音复刻2.0），不要改；4) locked 仅作标记位，火山引擎路径不强制试听校验。",
+  "scope": "remotion_video_template_1_only",
+  "provider": "volcengine",
+  "api_key": "你的火山引擎 API Key（控制台 > API Key 管理获取，也可用环境变量 VOLCENGINE_API_KEY）",
+  "resource_id": "seed-icl-2.0",
+  "speaker_id": "icl_你的复刻音色ID 或 S_xxx",
+  "language": "zh",
+  "speed": 0,
+  "volume": 0,
+  "pitch": 0,
+  "sample_rate": 24000,
+  "locked": true,
+  "postprocess_filter": "highpass=f=80,lowpass=f=8000,speechnorm=e=6.5:r=0.0001:l=1",
+  "outro_voice": {
+    "speaker_id": "icl_你的复刻音色ID 或 S_xxx",
+    "text": "我是【你的名字】，关注我，学习更多 AI 知识。",
+    "asset": "public/generated/outro-voice.wav"
+  }
+}

@@ -65,6 +65,26 @@ export WHISPER_MODEL_PATH="$HOME/models/ggml-small.bin"   # 打轴必填，没�
 
 ---
 
+## 用火山引擎云端配音（不想装 Voicebox 时）
+
+如果你不想在本机装 Voicebox.app，可改用火山引擎云端配音：
+
+1. 在 [火山引擎控制台](https://console.volcengine.com/) 开通「声音复刻 2.0」并拿到 API Key。
+2. 准备一段 10~60 秒干净人声 `my-voice.wav`，训练音色：
+   ```bash
+   python3 scripts/ve_voice_clone.py train --sample my-voice.wav --speaker-id icl_myvoice --demo-text "你好，这是我的声音复刻测试。"
+   python3 scripts/ve_voice_clone.py query --speaker-id icl_myvoice   # 轮询到 status=2/4 即可合成
+   ```
+3. 把 `skill/references/student-audio-pipeline-volcengine.example.json` 复制为模板根目录 `audio-pipeline.json`，填好 `api_key` 与 `speaker_id`。
+4. 生成片尾人声（一次）：
+   ```bash
+   echo "我是小明，关注我，学习更多 AI 知识。" > outro.txt
+   python3 scripts/ve_generate.py --text-file outro.txt --output public/generated/outro-voice.wav
+   ```
+5. 后续 `build_video.py` / `make:render` 与 Voicebox 方案**完全一致**。
+
+> ⚠️ 后付费音色首次正式合成即固定并计费；免费额度与限制见 `references/火山引擎语音克隆接入.md`。
+
 ## 常见问题
 
 **Q：配音报错 "Voicebox新克隆尚未通过试听"？**
@@ -83,4 +103,4 @@ A：说明字幕/画面/旁白没同源。不要手改时长，回到 `script.md
 A：改 `LockedOutro.tsx` 文案 + 换 `public/outro/avatar.png`；音频则重新生成 `public/generated/outro-voice.wav`。
 
 **Q：没有 Voicebox / 想用别的 TTS？**
-A：本模板只支持本机 Voicebox（`voicebox_local`），云端/系统 TTS 不被接受。必须先装 Voicebox.app 并克隆自己的声音（恰好 1 条样本）。
+A：可用**火山引擎云端配音**（`provider: volcengine`）替代本机 Voicebox——无需安装 Voicebox.app，只要 API Key + 复刻音色 `speaker_id` 即可。先用 `scripts/ve_voice_clone.py train` 训练拿到 speaker_id，再把 `audio-pipeline.json` 的 `provider` 改为 `volcengine` 并填 `api_key`/`speaker_id`。完整流程见 `references/火山引擎语音克隆接入.md`。除火山引擎外的其它云端/系统 TTS 仍不被接受。

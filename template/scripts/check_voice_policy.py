@@ -14,12 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 PROFILE_ID = "你的Voicebox档案ID"
 PROFILE_NAME = "【你的名字】终稿原声-Remotion专用"
 REFERENCE_AUDIO = Path("/Downloads/终稿-音频.wav")
+# 仅保留明确的「泄露标识符」守卫。火山引擎/豆包/MegaTTS 等已作为受支持的云端配音后端，
+# 不再作为误报标记（否则 audio-pipeline.json 配置 volcengine 会被分发 lint 误拦）。
 CLOUD_MARKERS = (
-    "\u706b\u5c71",
-    "volc" + "engine",
-    "volcano" + "_icl",
-    "mega" + "tts",
-    "dou" + "bao",
     "s_x6g5" + "zef72",
 )
 ACTIVE_FILES = (
@@ -36,7 +33,42 @@ LOCAL_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 
 def validate_config(config: dict) -> None:
-    _validate_voicebox_config(config)
+    if not isinstance(config, dict):
+        raise SystemExit("audio-pipeline.json 必须是对象")
+    provider = config.get("provider")
+    if provider == "voicebox_local":
+        _validate_voicebox_config(config)
+    elif provider == "volcengine":
+        _validate_volcengine_config(config)
+    else:
+        raise SystemExit(f"不支持的 provider：{provider!r}（仅支持 voicebox_local / volcengine）")
+
+
+def _validate_volcengine_config(config: dict) -> None:
+    """云端火山引擎配音后端：只需 api_key + speaker_id 等，不依赖本机 Voicebox 字段。"""
+    required = {
+        "provider": str,
+        "api_key": str,
+        "resource_id": str,
+        "speaker_id": str,
+        "language": str,
+        "locked": bool,
+        "postprocess_filter": str,
+    }
+    for key, typ in required.items():
+        if key not in config:
+            raise SystemExit(f"audio-pipeline.json 缺少必填字段：{key}")
+        value = config[key]
+        ok = isinstance(value, typ) and not (typ is bool and not isinstance(value, bool))
+        if typ is str:
+            ok = isinstance(value, str) and str(value).strip() != ""
+        if not ok:
+            raise SystemExit(f"audio-pipeline.json 字段 {key} 不合法（应为 {typ.__name__} 且非空）")
+    outro = config.get("outro_voice")
+    if not isinstance(outro, dict) or not str(outro.get("text", "")).strip():
+        raise SystemExit("outro_voice.text 不能为空，请填你的片尾口播文案")
+    if not str(outro.get("speaker_id", "")).strip():
+        raise SystemExit("outro_voice.speaker_id 不能为空，请填复刻得到的 icl_/S_ 开头音色 ID")
 
 
 def _validate_voicebox_config(config: dict) -> None:
@@ -125,11 +157,17 @@ def main() -> None:
     validate_active_files()
     if args.live:
         validate_live_profile(config)
-    print(f"voice_source=voicebox:{PROFILE_ID}")
-    print("voice_model=qwen3-tts:1.7B")
-    print(f"reference_audio={REFERENCE_AUDIO}")
-    print(f"outro_voice_source=voicebox:{PROFILE_ID}")
-    print("voice_policy=locked")
+    provider = config.get("provider")
+    if provider == "volcengine":
+        print(f"voice_source=volcengine:{config.get('speaker_id')}")
+        print(f"voice_model={config.get('resource_id')}")
+        print("voice_policy=cloud")
+    else:
+        print(f"voice_source=voicebox:{PROFILE_ID}")
+        print("voice_model=qwen3-tts:1.7B")
+        print(f"reference_audio={REFERENCE_AUDIO}")
+        print(f"outro_voice_source=voicebox:{PROFILE_ID}")
+        print("voice_policy=locked")
 
 
 if __name__ == "__main__":

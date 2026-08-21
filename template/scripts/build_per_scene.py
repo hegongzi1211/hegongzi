@@ -126,9 +126,11 @@ def generate_scene(cfg: dict, text: str) -> Path:
 
 def main() -> None:
     cfg = json.loads((ROOT / "audio-pipeline.json").read_text(encoding="utf-8"))
-    if cfg["provider"] != "voicebox_local":
-        raise SystemExit("当前Remotion模板禁止使用非Voicebox声音方案")
-    ensure_service(cfg["service_url"].rstrip("/"))
+    provider = cfg.get("provider")
+    if provider not in ("voicebox_local", "volcengine"):
+        raise SystemExit("当前Remotion模板只允许 voicebox_local 或 volcengine 配音方案")
+    if provider == "voicebox_local":
+        ensure_service(cfg["service_url"].rstrip("/"))
 
     scenes = json.loads((ROOT / "layout-scenes.json").read_text(encoding="utf-8"))
     bv.validate_scenes(scenes)
@@ -141,17 +143,24 @@ def main() -> None:
     scene_audios: list[Path] = []
     for i, (scene, nar) in enumerate(zip(body, narrations)):
         print(f"[scene {i + 1}/{len(body)}] {scene['type']} generating...", flush=True)
-        raw = generate_scene(cfg, nar)
-        with tempfile.TemporaryDirectory() as tmp_name:
-            tmp = Path(tmp_name)
-            trim = find_spoken_start(raw, nar, tmp)
-            out = ROOT / "generated" / f"scene-{i:02d}.wav"
-            subprocess.run([
-                "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-                "-i", str(raw),
-                "-af", f"atrim=start={trim:.3f},asetpts=PTS-STARTPTS,aresample=48000",
-                "-ar", "48000", "-ac", "1", str(out),
-            ], check=True)
+        out = ROOT / "generated" / f"scene-{i:02d}.wav"
+        if provider == "volcengine":
+            # ve_generate.py 已直接输出 48k 单声道成品 wav（含 postprocess 与首静音裁切）
+            tmp_txt = ROOT / "generated" / f"scene-{i:02d}.txt"
+            tmp_txt.write_text(nar, encoding="utf-8")
+            subprocess.run([sys.executable, str(ROOT / "scripts" / "ve_generate.py"),
+                            "--text-file", str(tmp_txt), "--output", str(out)], check=True)
+        else:
+            raw = generate_scene(cfg, nar)
+            with tempfile.TemporaryDirectory() as tmp_name:
+                tmp = Path(tmp_name)
+                trim = find_spoken_start(raw, nar, tmp)
+                subprocess.run([
+                    "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                    "-i", str(raw),
+                    "-af", f"atrim=start={trim:.3f},asetpts=PTS-STARTPTS,aresample=48000",
+                    "-ar", "48000", "-ac", "1", str(out),
+                ], check=True)
         scene_audios.append(out)
         print(f"[scene {i + 1}/{len(body)}] done -> {out.name}", flush=True)
 

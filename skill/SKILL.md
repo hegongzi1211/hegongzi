@@ -22,7 +22,7 @@ agent_created: true
 
 ## 一、重要事实（避免学员踩坑）
 
-1. **只支持本机 Voicebox，没有 edge-tts 兜底。** 模板 `build_video.py` / `voicebox_generate.py` 硬编码只允许 `provider: voicebox_local`。学员**必须**安装 [Voicebox.app](https://voicebox.app) 并克隆自己的声音，得到一个 profile（**该 profile 下只能有 1 条样本**）。任何云端 TTS、系统 TTS 都不被接受。
+1. **配音后端二选一：本机 Voicebox 或 火山引擎云端。** 模板按 `audio-pipeline.json` 的 `provider` 切换：默认 `voicebox_local`（本机 [Voicebox.app](https://voicebox.app)，需克隆自己的声音、profile 下只能有 1 条样本）；另提供 `volcengine`（火山引擎「声音复刻 + 大模型语音合成」云端后端，无需本机 GPU）作为可替换方案，完整接入见 `references/火山引擎语音克隆接入.md`。除这两种外（edge-tts、系统 TTS 等）仍不被接受。
 2. **Whisper 是硬依赖，不是可选项。** 字幕对齐和场景时间轴强依赖 `whisper.cpp` 的 `whisper-cli` 及其 token 级时间戳。学员必须下载一个中文 `ggml-small.bin`（或更大）模型，并用 `WHISPER_MODEL_PATH` 指向它。没有 Whisper 无法生成字幕/时间轴。
 3. **`locked` 必须为 `true`。** 这是"我已试听通过、可放心使用的音色"开关，不是"锁定何公子"。填成 `false` 反而会被 `voicebox_generate.py` 拒绝生成。
 4. **片尾人名已解耦。** 不再硬编码"我是何公子"：`script.md` 的正式口播必须以 `audio-pipeline.json` 的 `outro_voice.text` 结尾；屏幕上的 `LockedOutro.tsx` 显示占位「我是【你的名字】」，学员改成自己的即可。
@@ -98,10 +98,20 @@ npm run make:render -- --output out/student-video.mp4
 
 ## 六、无 Whisper / 无 Voicebox 时的兜底
 
-- **无 Whisper**：模板无法生成字幕与场景时间轴，**没有可用兜底**。学员必须安装 `whisper-cli` 并设 `WHISPER_MODEL_PATH`（见第三节第 5 条）。
-- **无本地 Voicebox**：模板**不支持**云端/系统 TTS。学员必须装 Voicebox.app 并克隆自己的声音（恰好 1 条样本）。
+- **无 Whisper**：模板无法生成字幕与场景时间轴，**没有可用兜底**（与配音后端无关）。学员必须安装 `whisper-cli` 并设 `WHISPER_MODEL_PATH`（见第三节第 5 条）。
+- **无本地 Voicebox**：可改用**火山引擎云端配音**（`provider: volcengine`），无需安装 Voicebox.app，详见 `references/火山引擎语音克隆接入.md`。除火山引擎外的其它云端/系统 TTS 仍不被接受。
 
 ---
+
+## 六之一、火山引擎云端配音（可选后端）
+
+不想在本机跑 Voicebox 的学员，可用火山引擎「声音复刻 + 大模型语音合成」做云端配音。核心三步：
+
+1. **克隆音色**：`python3 scripts/ve_voice_clone.py train --sample 你的人声.wav --speaker-id icl_xxx`（后付费用 `--custom-speaker-id`），再用 `query` 轮询到 `status=2/4`。
+2. **切配置**：把 `audio-pipeline.json` 的 `provider` 改为 `volcengine`，填 `api_key` 与训练得到的 `speaker_id`。
+3. **照常生产**：`build_video.py` 检测到 `volcengine` 会自动改调 `ve_generate.py` 合成旁白，下游 Whisper 打轴与渲染完全不变。
+
+完整字段说明、成本与合规提醒见 `references/火山引擎语音克隆接入.md`。
 
 ## 七、固定规范（任何人都不要动结构）
 

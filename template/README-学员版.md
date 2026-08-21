@@ -10,7 +10,9 @@
 - **Python 3.11+**（构建脚本用）
 - **ffmpeg**（音频/视频处理，需在场）
 - **whisper.cpp 的 `whisper-cli`**：打轴强依赖。下载一个中文 `ggml-small.bin`（或更大）模型放到任意目录，记下绝对路径，下面会用到。
-- **Voicebox.app**（本机 TTS）：克隆你自己的声音，得到一个 profile（**该 profile 下只能有 1 条样本**）。
+- **配音后端二选一**：
+  - **本机 Voicebox.app**（默认）：克隆你自己的声音，得到一个 profile（**该 profile 下只能有 1 条样本**）；
+  - **火山引擎云端配音**（可选）：无需安装 Voicebox，只要 API Key + 复刻音色 `speaker_id`，见 `skill/references/火山引擎语音克隆接入.md`。
 
 ## 二、安装步骤
 
@@ -27,6 +29,8 @@ export WHISPER_MODEL_PATH="<你的 ggml-small.bin 绝对路径>"  # 打轴必填
 ```
 
 ## 三、换成你自己的声音
+
+> 用火山引擎云端配音的学员：先把 `audio-pipeline.json` 的 `provider` 改为 `volcengine` 并填 `api_key` / `speaker_id`（完整流程见 `skill/references/火山引擎语音克隆接入.md`）。下面的 Voicebox 改 `profile_id` 步骤可跳过，片尾人声改用 `python3 scripts/ve_generate.py --text-file outro.txt --output public/generated/outro-voice.wav` 生成。
 
 1. 打开 `audio-pipeline.json`，把 `profile_id` / `profile_name` 改成你 Voicebox 里的档案；
    `outro_voice.text` 改成你的片尾口播（如 `我是小明，关注我，学习更多 AI 知识。`）。
