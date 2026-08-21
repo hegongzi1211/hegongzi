@@ -95,10 +95,10 @@ def synth_mp3(api_key: str, resource_id: str, speaker_id: str, text: str,
                 "speech_rate": speed,
                 "loudness_rate": volume,
             },
-            "additions": {
+            "additions": json.dumps({
                 "silence_duration": 0,
                 "post_process": {"pitch": pitch},
-            },
+            }, ensure_ascii=False),
         },
     }
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -116,11 +116,15 @@ def synth_mp3(api_key: str, resource_id: str, speaker_id: str, text: str,
             except json.JSONDecodeError:
                 continue
             code = obj.get("code")
-            if code is not None and code != 1000:
-                raise SystemExit(f"火山引擎合成失败：code={code} message={obj.get('message')}")
+            msg = obj.get("message")
             data_b64 = obj.get("data")
             if data_b64:
                 chunks.append(base64.b64decode(data_b64))
+                continue
+            # 无音频数据的控制/状态帧（如 code=0 建连、code=20000000=OK）忽略；
+            # 仅当显式错误码且 message 非空（非 OK）才退出
+            if code is not None and code not in (0, 1000, 20000000) and msg and msg != "OK":
+                raise SystemExit(f"火山引擎合成失败：code={code} message={msg}")
     if not chunks:
         raise SystemExit("火山引擎未返回任何音频数据，请检查 speaker_id / api_key / 账户额度")
     return b"".join(chunks)

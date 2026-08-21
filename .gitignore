@@ -22,3 +22,6 @@ Thumbs.db
 .workbuddy/
 __pycache__/
 *.pyc
+
+# 本地真实凭据配置（不进仓库）
+template/audio-pipeline-volcengine.json
